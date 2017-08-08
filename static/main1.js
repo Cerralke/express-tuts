@@ -142,13 +142,42 @@ class View {
   }
 }
 
-window.fetch('api/products')
-  .then(res => res.json())
-  .then(products => {
-    const model = new Model(products)
-    const view = new View(model)
-    const $products = document.querySelector('.products')
-    view.render().map($product => {
-      $products.appendChild($product)
+function refresh () {
+  const $products = document.querySelector('.products')
+  $products.innerHTML = ''
+
+  window.fetch('/api/products')
+    .then(res => res.json())
+    .then(products => {
+      const model = new Model(products)
+      const view = new View(model)
+      view.render().map($product => {
+        $products.appendChild($product)
+      })
     })
+}
+
+refresh()
+
+document.querySelector('form').addEventListener('submit', (ev) => {
+  ev.preventDefault()
+
+  const name = ev.target.querySelector('input[name=name]').value
+
+  window.fetch('/api/products', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ name })
+  }).then(res => {
+    if (res.ok) {
+      refresh()
+    } else {
+      throw res.json()
+    }
+  }).catch(err => {
+    const message = err.error ? err.error.message : err.message
+    window.alert(message)
   })
+})

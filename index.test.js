@@ -24,17 +24,16 @@ describe('Server', () => {
       })
   })
 
-  it('should add new product', () => {
+  it('should add new product at /api/products', () => {
     return request(app)
-      .post('/addProduct')
-      .send('name=Testowy')
-      .expect(303)
-      .then(res => {
-        return request(app)
-          .get('/api/products')
-          .then(res => {
-            expect(res.body.length).to.equal(4)
-          })
-      })
+      .post('/api/products')
+      .send({ name: "Znowu Test" })
+      .expect(201)
+  })
+
+  it('should return error at /api/products with wrong data', () => {
+    return request(app)
+      .post('/api/products')
+      .expect(400)
   })
 })
