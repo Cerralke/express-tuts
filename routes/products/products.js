@@ -2,6 +2,18 @@ const Router = require('express').Router
 const bodyParser = require('body-parser')
 const boom = require('boom')
 const model = require('../../models/products')
+const Joi = require('joi')
+const celebrate = require('celebrate')
+
+const productSchema = Joi.object().keys({
+	name: Joi.string().min(3).max(30).required()
+})
+
+const listingSchema = Joi.object().keys({
+  offset: Joi.number().positive().default(0),
+  limit: Joi.number().positive().default(2),
+  fields: Joi.array().items(Joi.string().valid(productSchema._inner.children.map(c => c.key))).default(false)
+})
 
 class Products {
 	constructor (model) {
@@ -9,12 +21,19 @@ class Products {
 
 	    this.router = Router()
 	    this.router.route('/')
-	      .post(bodyParser.json(), (req, res, next) => this.new(req, res).catch(next))
-	      .get((req, res, next) => this.list(req, res).catch(next))
+	      .post(
+		    bodyParser.json(), 
+		    celebrate({ body: productSchema }),
+	      	(req, res, next) => this.new(req, res).catch(next)
+	      )
+	      .get(
+	      	celebrate({ query: listingSchema }),
+	      	(req, res, next) => this.list(req, res).catch(next)
+	      )
 	}
 
 	async new (req, res) {
-		const name = req.body.name
+		const { name } = Joi.attempt(req.body, productSchema)
 		if (!name) {
 			throw boom.badRequest('name is missing!')
 		}
@@ -33,7 +52,29 @@ class Products {
 	}
 
 	async list (req, res) {
-	    res.json(await this._model.products())
+	    const { limit, offset, fields } = req.query
+	    const [len, products] = await Promise.all([
+	      this._model.length,
+	      this._model.products(limit, offset, fields)
+	    ])
+	    const hasNext = offset + limit < len
+	    const hasPrev = offset > 0
+
+	    const nextLimit = hasNext ? Math.min(limit, len - offset - limit) : limit
+	    const nextOffset = offset + limit
+
+	    const prevLimit = hasPrev ? Math.min(limit, offset) : 0
+	    const prevOffset = Math.max(offset - limit, 0)
+
+	    const link = (limit, offset) => {
+	      return `${req.protocol}://${req.header('Host')}${req.baseUrl}?limit=${nextLimit}&offset=${nextOffset}`
+	    }
+	    res
+	      .links({
+	        next: hasNext ? link(nextLimit, nextOffset) : null,
+	        prev: hasPrev ? link(prevLimit, prevOffset) : null
+	      })
+	      .json(products)
 	  }
 
 }

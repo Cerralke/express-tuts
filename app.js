@@ -4,6 +4,7 @@ const serveStatic = require('serve-static')
 const compression = require('compression')
 const bodyParser = require('body-parser')
 const boom = require('boom')
+const celebrate = require('celebrate')
 
 const routes = require('./routes')
 
@@ -39,9 +40,11 @@ app.use((err, req, res, next) => {
   res
     .status(err.output.statusCode)
     .json({
-      code: err.output.statusCode,
+      statusCode: err.output.statusCode,
       message: err.message
     })
 })
+
+app.use(celebrate.errors())
 
 module.exports = app
