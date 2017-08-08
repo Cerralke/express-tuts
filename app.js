@@ -29,6 +29,14 @@ app.use(express.static('static'))
 app.use(routes)	
 
 app.use((err, req, res, next) => {
+  if (err.name === 'UnauthorizedError') {
+    next(boom.unauthorized(err.message))
+  } else {
+    next(err)
+  }
+})
+
+app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next()
   }

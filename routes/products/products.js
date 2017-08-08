@@ -4,6 +4,7 @@ const boom = require('boom')
 const model = require('../../models/products')
 const Joi = require('joi')
 const celebrate = require('celebrate')
+const jwt = require('express-jwt')
 
 const productSchema = Joi.object().keys({
 	name: Joi.string().min(3).max(30).required()
@@ -15,6 +16,12 @@ const listingSchema = Joi.object().keys({
   fields: Joi.array().items(Joi.string().valid(productSchema._inner.children.map(c => c.key))).default(false)
 })
 
+function requireAuth () {
+    return jwt({
+	    secret: 'secret'
+	})
+}
+
 class Products {
 	constructor (model) {
 		 this._model = model
@@ -22,6 +29,7 @@ class Products {
 	    this.router = Router()
 	    this.router.route('/')
 	      .post(
+	      	requireAuth(),
 		    bodyParser.json(), 
 		    celebrate({ body: productSchema }),
 	      	(req, res, next) => this.new(req, res).catch(next)
