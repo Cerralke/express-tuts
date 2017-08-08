@@ -4,7 +4,7 @@
   "description": "",
   "main": "node index",
   "scripts": {
-    "test": "mocha .",
+    "test": "mocha --recursive routes index.test.js",
     "start": "nodemon --delay 1 ./index.js"
   },
   "keywords": [],

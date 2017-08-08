@@ -20,7 +20,7 @@ describe('Server', () => {
       .expect(200)
       .expect('Content-Type', /json/)
       .then(response => {
-        expect(response.body.length).to.equal(3)
+        expect(response.body.length).to.equal(4)
       })
   })
 
