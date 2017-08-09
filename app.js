@@ -5,6 +5,8 @@ const compression = require('compression')
 const bodyParser = require('body-parser')
 const boom = require('boom')
 const celebrate = require('celebrate')
+const helmet = require('helmet')
+const corser = require('corser')
 
 const routes = require('./routes')
 
@@ -24,12 +26,42 @@ app.use((req, res, next) => {
   next()
 })
 
+app.set('view engine', 'pug')
+
 app.use(morgan('dev'))
+
+app.use(corser.create({
+  origins: ['\'self\'']
+}))
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ['\'self\'', 'https://xpla.org/']
+    }
+  },
+  dnsPrefetchControl: {
+    allow: false
+  },
+  frameguard: {
+    action: 'deny'
+  },
+  hsts: {},
+  ieNoOpen: {},
+  noSniff: {},
+  referrerPolicy: {
+    policy: 'origin-when-cross-origin'
+  },
+  xssFilter: {}
+}))
+
 app.use(express.static('static'))
 app.use(routes)	
 
 app.use((err, req, res, next) => {
-  if (err.name === 'UnauthorizedError') {
+  if (err.code === 'permission_denied'){
+    next(boom.forbidden(err.message))
+  } else if (err.name === 'UnauthorizedError') {
     next(boom.unauthorized(err.message))
   } else {
     next(err)

@@ -9,7 +9,10 @@ router.use('/api/products', products)
 
 router.post('/api/tokens', (req, res) => {
   const user = {
-    username: 'abcdefgh'
+    username: 'abcdefgh',
+    permissions: [
+    	'create'
+    ]
   }
   const secret = 'secret'
   const options = {
